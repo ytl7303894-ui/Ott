@@ -44,8 +44,8 @@ MUST_JOIN_CHANNEL = "@OGGY_OTP"
 REFERRAL_COMMISSION = 1.5  # 1.5% per recharge
 
 # Global API Credentials for Pyrogram Login
-GLOBAL_API_ID = 6435225
-GLOBAL_API_HASH = "4e984ea35f854762dcde906dce426c2d"
+GLOBAL_API_ID = 36884577
+GLOBAL_API_HASH = "da0f01eaa52150056987ba768186ee66"
 
 
 # -----------------------
