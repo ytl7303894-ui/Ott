@@ -9,6 +9,8 @@ import asyncio
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 import telebot.types
+import qrcode
+from io import BytesIO
 
 @classmethod
 def _disable_story(cls, obj):
@@ -1877,7 +1879,7 @@ def show_recharge_methods(chat_id, message_id, user_id):
     )
 
 def process_recharge_amount(msg):
-    """Process recharge amount for UPI"""
+    """Process recharge amount for UPI - DYNAMIC QR CODE GENERATOR"""
     try:
         amount = float(msg.text)
         if amount < 1:
@@ -1886,12 +1888,27 @@ def process_recharge_amount(msg):
             return
         
         user_id = msg.from_user.id
+        upi_id = "anurag99999@fam"
         
-        # UPI Payment Details with Deposit Button
+        # Generate dynamic UPI QR code based on amount
+        # UPI QR code standard format
+        upi_url = f"upi://pay?pa={upi_id}&pn=OTP%20Bot&am={amount}&cu=INR"
+        
+        # Generate QR code
+        qr = qrcode.QRCode(version=1, box_size=10, border=4)
+        qr.add_data(upi_url)
+        qr.make(fit=True)
+        qr_img = qr.make_image(fill_color="black", back_color="white")
+        
+        # Save to bytes
+        byte_arr = BytesIO()
+        qr_img.save(byte_arr, format='PNG')
+        byte_arr.seek(0)
+        
         caption = f"""<blockquote>💳 <b>UPI Payment Details</b>
 
 💰 Amount: {format_currency(amount)}
-📱 UPI ID: <code>therealtanish@fam</code>
+📱 UPI ID: <code>{upi_id}</code>
 </blockquote>
 
 <blockquote>📋 <b>Instructions:</b>
@@ -1899,7 +1916,7 @@ def process_recharge_amount(msg):
 2. After payment, click **Deposited ✅** button
 3. Follow the steps to submit proof</blockquote>"""
         
-        # Send QR code image with Deposit Button
+        # Send dynamic QR code with Deposit Button
         markup = InlineKeyboardMarkup()
         markup.add(InlineKeyboardButton("💰 Deposited ✅", callback_data="upi_deposited"))
         
@@ -1909,9 +1926,10 @@ def process_recharge_amount(msg):
             "step": "qr_shown"
         }
         
+        # Send dynamically generated QR code
         bot.send_photo(
             msg.chat.id,
-            "https://files.catbox.moe/4e6uos.jpg",
+            byte_arr,  # Dynamic QR code generated based on amount
             caption=caption,
             parse_mode="HTML",
             reply_markup=markup
@@ -1919,6 +1937,10 @@ def process_recharge_amount(msg):
     
     except ValueError:
         bot.send_message(msg.chat.id, "❌ Invalid amount. Enter numbers only:")
+        bot.register_next_step_handler(msg, process_recharge_amount)
+    except Exception as e:
+        logger.error(f"QR generation error: {e}")
+        bot.send_message(msg.chat.id, f"❌ Error generating QR code. Please try again.")
         bot.register_next_step_handler(msg, process_recharge_amount)
 
 # ADDED: UPI Payment Flow Message Handlers
